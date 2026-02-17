@@ -5,160 +5,104 @@ function CategoryPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [values, setValues] = useState([]);
   const [newValue, setNewValue] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [addError, setAddError] = useState(null);
 
-  const handleSelectCategory = (cat) => {
-    setSelectedCategory(cat);
-    fetchValues(cat.id);
-  };
-
-  const fetchValues = (categoryId) => {
-    setLoading(true);
-    setError(null);
+  // Define the function that will be passed to SearchDropdown
+  const handleCategorySearch = (category) => {
+    console.log("🔵 handleCategorySearch RECEIVED:", category);
     
-    fetch(`http://localhost:8080/api/setup/categories/${categoryId}/values`)
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch values');
-        return res.json();
-      })
-      .then(data => {
-        // Properly parse the JSON strings
-        const cleaned = data.map(v => {
-          try {
-            const parsed = JSON.parse(v.value);
-            if (typeof parsed === 'string') {
-              return { ...v, value: parsed };
-            } else if (parsed.value) {
-              return { ...v, value: parsed.value };
-            } else {
-              const firstKey = Object.keys(parsed)[0];
-              return { ...v, value: parsed[firstKey] || '' };
-            }
-          // eslint-disable-next-line no-unused-vars
-          } catch (e) {
-            // Fallback cleaning
-            return { 
-              ...v, 
-              // eslint-disable-next-line no-useless-escape
-              value: v.value.replace(/[\{\}"\r\n]/g, "").trim() 
-            };
-          }
-        });
-        setValues(cleaned);
-      })
-      .catch(err => {
-        console.error(err);
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
-  };
-
-  const handleAddValue = () => {
-    if (!newValue.trim()) {
-      setAddError('Please enter a value');
-      return;
-    }
-    
-    if (!selectedCategory) {
-      setAddError('Please select a category first');
+    if (!category) {
+      console.log("🔵 No category received, clearing...");
+      setSelectedCategory(null);
+      setValues([]);
       return;
     }
 
-    // Check for duplicates
-    if (values.some(v => v.value.toLowerCase() === newValue.trim().toLowerCase())) {
-      setAddError('This value already exists');
-      return;
-    }
-
-    setAddError(null);
-    setLoading(true);
-
-    // Send the value as a proper JSON object
-    const payload = { value: JSON.stringify({ value: newValue.trim() }) };
-
-    fetch(`http://localhost:8080/api/setup/categories/${selectedCategory.id}/values`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to add value');
-        return res.json();
-      })
-      .then(() => {
-        setNewValue("");
-        // Refresh values
-        return fetchValues(selectedCategory.id);
-      })
-      .catch(err => {
-        console.error(err);
-        setAddError(err.message);
-      })
-      .finally(() => setLoading(false));
-  };
-
-  const handleDeleteValue = (id) => {
-    if (!window.confirm('Are you sure you want to delete this value?')) return;
+    console.log("🔵 Setting selected category:", category.name);
+    setSelectedCategory(category);
     
-    setLoading(true);
-    fetch(`http://localhost:8080/api/setup/categories/values/${id}`, { 
-      method: "DELETE" 
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to delete value');
-        setValues(values.filter(v => v.id !== id));
-      })
-      .catch(err => {
-        console.error(err);
-        alert('Failed to delete value: ' + err.message);
-      })
-      .finally(() => setLoading(false));
+    // Process values
+    if (category.values && category.values.length > 0) {
+      console.log("🔵 Processing values:", category.values);
+      const parsedValues = category.values.map(v => {
+        // Extract text between quotes
+        const match = v.value.match(/"([^"]*)"/);
+        const cleanValue = match ? match[1] : v.value.replace(/[\{\}"\r\n]/g, "").trim();
+        return { id: v.id, value: cleanValue };
+      });
+      console.log("🔵 Parsed values:", parsedValues);
+      setValues(parsedValues);
+    } else {
+      console.log("🔵 No values for this category");
+      setValues([]);
+    }
   };
 
-  const filteredValues = values.filter(v =>
-    v.value.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleAddValue = async () => {
+    if (!newValue.trim() || !selectedCategory) return;
+    console.log("Adding value:", newValue);
+    // ... rest of your add value code
+  };
+
+  const handleDeleteValue = async (id) => {
+    console.log("Deleting value:", id);
+    // ... rest of your delete value code
+  };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <h2>Category Management</h2>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1 style={{ marginBottom: '30px' }}>Category Management</h1>
 
-      <SearchDropdown onSelect={handleSelectCategory} />
+      <div style={{ marginBottom: '30px' }}>
+        {/* Pass the function as onSearch prop */}
+        <SearchDropdown onSearch={handleCategorySearch} />
+      </div>
 
-      {error && (
-        <div style={{ color: 'red', marginTop: '10px' }}>
-          Error: {error}
-        </div>
-      )}
+      {/* Debug: Show current state */}
+      <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#e7f3ff', borderRadius: '4px' }}>
+        <strong>Debug:</strong> Selected Category: {selectedCategory ? selectedCategory.name : 'None'} | Values count: {values.length}
+      </div>
 
       {selectedCategory && (
-        <div style={{ marginTop: '20px' }}>
-          <h3>Values for: {selectedCategory.name}</h3>
-          
-          <div style={{ marginBottom: '15px' }}>
-            <input
-              type="text"
-              placeholder="Search values..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{ width: '100%', padding: '8px' }}
-            />
+        <div style={{ 
+          backgroundColor: '#f8f9fa', 
+          padding: '20px', 
+          borderRadius: '8px',
+          border: '1px solid #dee2e6'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '20px'
+          }}>
+            <div>
+              <h2 style={{ margin: 0, color: '#007bff' }}>
+                {selectedCategory.name}
+              </h2>
+              <p style={{ margin: '5px 0 0', color: '#6c757d' }}>
+                Code: {selectedCategory.code} | ID: {selectedCategory.id}
+              </p>
+            </div>
           </div>
 
-          {loading && <p>Loading...</p>}
-
-          {filteredValues.length > 0 ? (
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              {filteredValues.map(v => (
-                <li 
-                  key={v.id} 
-                  style={{ 
-                    padding: '10px', 
-                    margin: '5px 0',
-                    backgroundColor: '#f5f5f5',
+          {/* Values List */}
+          {values.length > 0 ? (
+            <ul style={{ 
+              listStyle: 'none', 
+              padding: 0,
+              marginBottom: '20px',
+              maxHeight: '400px',
+              overflowY: 'auto'
+            }}>
+              {values.map(v => (
+                <li
+                  key={v.id}
+                  style={{
+                    padding: '12px 15px',
+                    marginBottom: '8px',
+                    backgroundColor: 'white',
+                    border: '1px solid #dee2e6',
                     borderRadius: '4px',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -166,7 +110,7 @@ function CategoryPage() {
                   }}
                 >
                   <span>{v.value}</span>
-                  <button 
+                  <button
                     onClick={() => handleDeleteValue(v.id)}
                     style={{
                       padding: '5px 10px',
@@ -174,9 +118,9 @@ function CategoryPage() {
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      fontSize: '12px'
                     }}
-                    disabled={loading}
                   >
                     Delete
                   </button>
@@ -184,44 +128,67 @@ function CategoryPage() {
               ))}
             </ul>
           ) : (
-            !loading && <p>No values found</p>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '40px', 
+              color: '#6c757d',
+              border: '2px dashed #dee2e6',
+              borderRadius: '4px',
+              marginBottom: '20px'
+            }}>
+              No values found for this category
+            </div>
           )}
 
-          <div style={{ marginTop: '20px' }}>
-            {addError && (
-              <div style={{ color: 'red', marginBottom: '10px' }}>
-                {addError}
-              </div>
-            )}
-            
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <input
-                type="text"
-                placeholder="Add new value"
-                value={newValue}
-                onChange={e => {
-                  setNewValue(e.target.value);
-                  setAddError(null);
-                }}
-                style={{ flex: 1, padding: '8px' }}
-                disabled={loading}
-              />
-              <button 
-                onClick={handleAddValue}
-                style={{
-                  padding: '8px 15px',
-                  backgroundColor: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-                disabled={loading || !newValue.trim()}
-              >
-                Add Value
-              </button>
-            </div>
+          {/* Add Value Form */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '10px',
+            borderTop: '1px solid #dee2e6',
+            paddingTop: '20px'
+          }}>
+            <input
+              type="text"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              placeholder="Enter new value"
+              style={{
+                flex: 1,
+                padding: '10px',
+                border: '2px solid #dee2e6',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            />
+            <button
+              onClick={handleAddValue}
+              disabled={!newValue.trim()}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: newValue.trim() ? '#28a745' : '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: newValue.trim() ? 'pointer' : 'not-allowed',
+                fontWeight: 'bold'
+              }}
+            >
+              Add Value
+            </button>
           </div>
+        </div>
+      )}
+
+      {!selectedCategory && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px', 
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+          border: '2px dashed #dee2e6',
+          color: '#6c757d'
+        }}>
+          <h3>Select a category to view its values</h3>
         </div>
       )}
     </div>

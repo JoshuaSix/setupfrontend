@@ -1,14 +1,12 @@
 import "./App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import SearchDropdown from "./component/SearchDropdown";
-import CategoryPage from "./component/CategoryPage"; // make sure this file exists
+import CategoryPage from "./component/CategoryPage";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<SearchDropdown />} />
-        <Route path="/categories/:id" element={<CategoryPage />} />
+        <Route path="/*" element={<CategoryPage />} />
       </Routes>
     </Router>
   );
