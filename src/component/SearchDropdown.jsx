@@ -13,10 +13,10 @@ function SearchDropdown({ onSearch }) {
       try {
         const response = await fetch("http://localhost:8080/api/setup/categories");
         const data = await response.json();
-        console.log("🔴 Categories loaded:", data);
+        console.log(" Categories loaded>>>>", data);
         setCategories(data);
       } catch (err) {
-        console.error("Error fetching categories:", err);
+        console.error("Error fetching categories>>>>>", err);
       } finally {
         setLoading(false);
       }
@@ -41,13 +41,13 @@ function SearchDropdown({ onSearch }) {
         }
       }
     } catch (err) {
-      console.error("Error deleting category:", err);
+      console.error("Error deleting category>>>>>", err);
     }
   };
 
   const handleSearch = () => {
-    console.log("🔴 handleSearch called, selectedId:", selectedId);
-    console.log("🔴 onSearch type:", typeof onSearch);
+    console.log(" handleSearch called, selectedId>>>>>", selectedId);
+    console.log(" onSearch type:", typeof onSearch);
     
     if (!selectedId) {
       if (onSearch) {
@@ -60,13 +60,13 @@ function SearchDropdown({ onSearch }) {
       cat => cat.id.toString() === selectedId
     );
     
-    console.log("🔴 Selected category:", selectedCat);
+    console.log(" Selected category>>>>>>", selectedCat);
     
     if (onSearch) {
-      console.log("🔴 Calling onSearch with category");
+      console.log("Calling onSearch with category");
       onSearch(selectedCat);
     } else {
-      console.error("🔴 onSearch is not a function!");
+      console.error(" onSearch is not a function!");
     }
   };
 
@@ -93,7 +93,8 @@ function SearchDropdown({ onSearch }) {
           <option value="">Select Category</option>
           {categories.map(cat => (
             <option key={cat.id} value={cat.id}>
-              {cat.name} ({cat.code})
+              {cat.name} 
+              {/* ({cat.code}) */}
             </option>
           ))}
         </select>

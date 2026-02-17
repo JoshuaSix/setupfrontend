@@ -81,7 +81,7 @@ function CategoryPage() {
                 {selectedCategory.name}
               </h2>
               <p style={{ margin: '5px 0 0', color: '#6c757d' }}>
-                Code: {selectedCategory.code} | ID: {selectedCategory.id}
+                Code: {selectedCategory.code} 
               </p>
             </div>
           </div>
